@@ -29,8 +29,10 @@
   ],
   "scripts": {
     "build": "node scripts/build.mjs",
-    "test": "npm run build && node --test tests/*.test.mjs",
-    "coverage": "npm run build && c8 --check-coverage --statements 100 --branches 100 --functions 100 --lines 100 --reporter=text --reporter=html --reporter=lcov --include=dist/index.mjs node --test tests/*.test.mjs",
+    "test": "npm run build && npm run test:dist",
+    "test:dist": "node --test tests/*.test.mjs",
+    "coverage": "npm run build && npm run coverage:dist",
+    "coverage:dist": "c8 --check-coverage --statements 100 --branches 100 --functions 100 --lines 100 --reporter=text --reporter=html --reporter=lcov --include=dist/index.mjs node --test tests/*.test.mjs",
     "typecheck": "tsc -b --pretty false",
     "prepack": "npm run build"
   },

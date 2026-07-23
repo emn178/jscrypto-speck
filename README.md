@@ -1,4 +1,6 @@
 # @jscrypto/speck
+[![CI](https://github.com/emn178/jscrypto-speck/actions/workflows/ci.yml/badge.svg)](https://github.com/emn178/jscrypto-speck/actions/workflows/ci.yml)
+[![Coverage Status](https://coveralls.io/repos/emn178/jscrypto-speck/badge.svg?branch=main)](https://coveralls.io/r/emn178/jscrypto-speck?branch=main)
 
 SPECK block cipher components for [`@jscrypto/core`](https://www.npmjs.com/package/@jscrypto/core).
 
@@ -6,7 +8,7 @@ This package is an adapter. It depends on [`js-speck`](https://www.npmjs.com/pac
 
 SPECK is a niche/legacy/lightweight block cipher family. Do not treat it as a default recommendation for new encryption designs.
 
-The raw SPECK component has no mode, padding, IV, KDF, salt, or authentication by itself. If a protocol specifically requires modes or paddings, compose them from [`@jscrypto/classic`](https://www.npmjs.com/package/@jscrypto/classic). GCM is not advertised as a normal SPECK use case.
+The raw SPECK component has no mode, padding, IV, KDF, salt, or authentication by itself. If a protocol specifically requires modes or paddings, compose them from [`@jscrypto/classic`](https://www.npmjs.com/package/@jscrypto/classic). Modes can be composed only when their structural requirements are met; for example, GCM requires a 128-bit block cipher, so only SPECK128 variants are structurally compatible.
 
 ## Install
 
