@@ -8,6 +8,7 @@ import { cbc, ecb, noPadding, pkcs7 } from '@jscrypto/classic';
 import {
   allSpeckComponents,
   createSpeckCipher,
+  registerSpeck,
   speck64_128,
   speckPreset,
 } from '../dist/index.mjs';
@@ -151,6 +152,18 @@ test('speckPreset registers every SPECK component', () => {
   }
 });
 
+test('registerSpeck registers every SPECK component into an existing registry', () => {
+  const registry = createRegistry().use(cbc).use(pkcs7);
+  const returned = registerSpeck(registry);
+
+  assert.equal(returned, registry);
+  assert.equal(registry.has('mode', 'CBC'), true);
+  assert.equal(registry.has('padding', 'Pkcs7'), true);
+  for (const component of allSpeckComponents) {
+    assert.equal(registry.has('cipher', component.name), true);
+  }
+});
+
 test('rejects missing, invalid, wrong key, and wrong block inputs', () => {
   const key = hex('0001020308090a0b1011121318191a1b');
 
@@ -192,6 +205,7 @@ test('component create validates key length', () => {
 test('CommonJS build can be required', () => {
   const speck = require('../dist/index.cjs');
   assert.equal(typeof speck.createSpeckCipher, 'function');
+  assert.equal(typeof speck.registerSpeck, 'function');
   assert.equal(typeof speck.createRegistry, 'function');
   assert.equal(speck.speck64_128.name, 'SPECK64/128');
   assert.equal(speck.speckPreset.name, 'speck');
@@ -199,8 +213,8 @@ test('CommonJS build can be required', () => {
 
 test('UMD CommonJS builds can be required', () => {
   for (const file of [
-    '../dist/jscrypto-speck.umd.cjs',
-    '../dist/jscrypto-speck.standalone.umd.cjs',
+    '../dist/jscrypto-speck.umd.js',
+    '../dist/jscrypto-speck.standalone.umd.js',
   ]) {
     const speck = require(file);
     assert.equal(typeof speck.createSpeckCipher, 'function');
@@ -273,11 +287,16 @@ test('default UMD AMD path declares and receives jscryptoCore', async () => {
     vm.runInContext(code, context);
     assert.equal(pending.length, 1);
     const { deps, factory } = pending[0];
+    const exports = {};
     const args = [...deps].map((dep) => {
+      if (dep === 'exports') {
+        return exports;
+      }
       assert.ok(amdModules.has(dep), `missing AMD dependency: ${dep}`);
       return amdModules.get(dep);
     });
-    const exported = factory(...args);
+    const returned = factory(...args);
+    const exported = returned || exports;
     amdModules.set(moduleId, exported);
     return { deps: [...deps], exported };
   }
@@ -286,7 +305,7 @@ test('default UMD AMD path declares and receives jscryptoCore', async () => {
     new URL('../node_modules/@jscrypto/core/dist/jscrypto-core.umd.js', import.meta.url),
     'utf8',
   );
-  loadAmd('jscryptoCore', coreCode);
+  loadAmd('@jscrypto/core', coreCode);
   // Core's legacy UMD still creates a global while registering with AMD.
   // Clear it so speck must receive core through the AMD factory argument.
   delete context.jscryptoCore;
@@ -297,9 +316,9 @@ test('default UMD AMD path declares and receives jscryptoCore', async () => {
   ]) {
     const code = await readFile(new URL(file, import.meta.url), 'utf8');
     const { deps, exported } = loadAmd('jscryptoSpeck', code);
-    assert.deepEqual(deps, ['jscryptoCore']);
+    assert.deepEqual(deps, ['exports', '@jscrypto/core']);
     assert.equal(typeof exported.createSpeckCipher, 'function');
-    assert.equal(exported.createRegistry, amdModules.get('jscryptoCore').createRegistry);
+    assert.equal(exported.createRegistry, amdModules.get('@jscrypto/core').createRegistry);
     assert.equal(
       exported.createRegistry().use(exported.speck64_128).has('cipher', 'SPECK64/128'),
       true,
@@ -326,8 +345,10 @@ test('standalone UMD AMD path has no core dependency', async () => {
     const code = await readFile(new URL(file, import.meta.url), 'utf8');
     vm.runInContext(code, context);
     assert.equal(pending.length, 1);
-    assert.deepEqual([...pending[0].deps], []);
-    const exported = pending[0].factory();
+    assert.deepEqual([...pending[0].deps], ['exports']);
+    const exported = {};
+    const returned = pending[0].factory(exported);
+    assert.equal(returned, undefined);
     assert.equal(typeof exported.createSpeckCipher, 'function');
     assert.equal(typeof exported.createRegistry, 'function');
     assert.equal(

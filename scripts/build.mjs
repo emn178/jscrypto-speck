@@ -1,6 +1,10 @@
 import { execFileSync } from 'node:child_process';
 import { readFileSync, rmSync } from 'node:fs';
-import * as esbuild from 'esbuild';
+import commonjs from '@rollup/plugin-commonjs';
+import { nodeResolve } from '@rollup/plugin-node-resolve';
+import terser from '@rollup/plugin-terser';
+import { rollup } from 'rollup';
+import ts from 'typescript';
 
 const year = '2026';
 const owner = 'Chen, Yi-Cyuan';
@@ -30,197 +34,154 @@ execFileSync(process.execPath, ['node_modules/typescript/bin/tsc', '-b'], {
 rmSync(`${distDir}/.tsbuildinfo`, { force: true });
 rmSync('tsconfig.tsbuildinfo', { force: true });
 
-const commonOptions = {
-  entryPoints: [entryPoint],
-  bundle: true,
-  sourcemap: true,
-  target: 'es2015',
-  logLevel: 'info',
-};
-
-await esbuild.build({
-  ...commonOptions,
-  banner: {
-    js: licenseBanner,
-  },
-  format: 'esm',
+await buildEntry({
   external: [corePackageName, 'js-speck'],
-  outfile: `${distDir}/index.mjs`,
-});
-
-await esbuild.build({
-  ...commonOptions,
-  banner: {
-    js: licenseBanner,
-  },
-  format: 'cjs',
-  platform: 'node',
-  external: [corePackageName, 'js-speck'],
-  outfile: `${distDir}/index.cjs`,
-});
-
-await buildBrowser({
-  outfile: `${distDir}/${displayName}.iife.js`,
-  minify: false,
-  standalone: false,
-  umd: false,
-});
-
-await buildBrowser({
-  outfile: `${distDir}/${displayName}.iife.min.js`,
-  minify: true,
-  standalone: false,
-  umd: false,
-});
-
-await buildBrowser({
-  outfile: `${distDir}/${displayName}.umd.js`,
-  minify: false,
-  standalone: false,
-  umd: true,
-});
-
-await buildBrowser({
-  outfile: `${distDir}/${displayName}.umd.cjs`,
-  minify: false,
-  standalone: false,
-  umd: true,
-});
-
-await buildBrowser({
-  outfile: `${distDir}/${displayName}.umd.min.js`,
-  minify: true,
-  standalone: false,
-  umd: true,
-});
-
-await buildBrowser({
-  outfile: `${distDir}/${displayName}.standalone.iife.js`,
-  minify: false,
-  standalone: true,
-  umd: false,
-});
-
-await buildBrowser({
-  outfile: `${distDir}/${displayName}.standalone.iife.min.js`,
-  minify: true,
-  standalone: true,
-  umd: false,
-});
-
-await buildBrowser({
-  outfile: `${distDir}/${displayName}.standalone.umd.js`,
-  minify: false,
-  standalone: true,
-  umd: true,
-});
-
-await buildBrowser({
-  outfile: `${distDir}/${displayName}.standalone.umd.cjs`,
-  minify: false,
-  standalone: true,
-  umd: true,
-});
-
-await buildBrowser({
-  outfile: `${distDir}/${displayName}.standalone.umd.min.js`,
-  minify: true,
-  standalone: true,
-  umd: true,
-});
-
-/**
- * @param {{ outfile: string, minify: boolean, standalone: boolean, umd: boolean }} options
- */
-async function buildBrowser(options) {
-  const external = options.standalone ? [] : [corePackageName];
-  const plugins = options.standalone
-    ? []
-    : [createExternalGlobalsPlugin({ [corePackageName]: coreGlobalName })];
-
-  await esbuild.build({
-    ...commonOptions,
-    format: 'iife',
-    globalName,
-    minify: options.minify,
-    external,
-    plugins,
-    banner: {
-      js: options.umd
-        ? `${licenseBanner}\n${createUmdOpen(options.standalone)}`
-        : licenseBanner,
+  outputs: [
+    {
+      file: `${distDir}/index.mjs`,
+      format: 'esm',
     },
-    footer: options.umd
-      ? {
-          js: createUmdClose(),
-        }
-      : undefined,
-    outfile: options.outfile,
+    {
+      file: `${distDir}/index.cjs`,
+      format: 'cjs',
+      exports: 'named',
+    },
+  ],
+});
+
+await buildEntry({
+  external: [corePackageName],
+  globals: {
+    [corePackageName]: coreGlobalName,
+  },
+  outputs: [
+    {
+      file: `${distDir}/${displayName}.iife.js`,
+      format: 'iife',
+      name: globalName,
+    },
+    {
+      file: `${distDir}/${displayName}.iife.min.js`,
+      format: 'iife',
+      name: globalName,
+      minify: true,
+    },
+    {
+      file: `${distDir}/${displayName}.umd.js`,
+      format: 'umd',
+      name: globalName,
+    },
+    {
+      file: `${distDir}/${displayName}.umd.min.js`,
+      format: 'umd',
+      name: globalName,
+      minify: true,
+    },
+  ],
+});
+
+await buildEntry({
+  external: [],
+  outputs: [
+    {
+      file: `${distDir}/${displayName}.standalone.iife.js`,
+      format: 'iife',
+      name: globalName,
+    },
+    {
+      file: `${distDir}/${displayName}.standalone.iife.min.js`,
+      format: 'iife',
+      name: globalName,
+      minify: true,
+    },
+    {
+      file: `${distDir}/${displayName}.standalone.umd.js`,
+      format: 'umd',
+      name: globalName,
+    },
+    {
+      file: `${distDir}/${displayName}.standalone.umd.min.js`,
+      format: 'umd',
+      name: globalName,
+      minify: true,
+    },
+  ],
+});
+
+/**
+ * @param {{
+ *   external: string[],
+ *   globals?: Record<string, string>,
+ *   outputs: Array<{
+ *     file: string,
+ *     format: 'esm' | 'cjs' | 'iife' | 'umd',
+ *     name?: string,
+ *     exports?: 'named',
+ *     minify?: boolean,
+ *   }>,
+ * }} options
+ */
+async function buildEntry(options) {
+  const bundle = await rollup({
+    input: entryPoint,
+    external: options.external,
+    plugins: [
+      transpileTypeScript(),
+      nodeResolve(),
+      commonjs(),
+    ],
   });
-}
 
-/**
- * Wrap the generated IIFE inside a UMD factory so AMD/CJS can inject `@jscrypto/core`.
- * @param {boolean} standalone
- */
-function createUmdOpen(standalone) {
-  if (standalone) {
-    return `;(function (root, factory) {
-  if (typeof define === 'function' && define.amd) {
-    define([], factory);
-  } else if (typeof module === 'object' && module.exports) {
-    module.exports = factory();
-  } else {
-    root.${globalName} = factory();
-  }
-})(typeof self !== 'undefined' ? self : this, function () {`;
-  }
+  try {
+    for (const output of options.outputs) {
+      const plugins = output.minify
+        ? [
+            terser({
+              format: {
+                comments: /^!/,
+              },
+            }),
+          ]
+        : [];
 
-  return `;(function (root, factory) {
-  if (typeof define === 'function' && define.amd) {
-    define(['${coreGlobalName}'], factory);
-  } else if (typeof module === 'object' && module.exports) {
-    module.exports = factory(require('${corePackageName}'));
-  } else {
-    root.${globalName} = factory(root.${coreGlobalName});
-  }
-})(typeof self !== 'undefined' ? self : this, function (${coreGlobalName}) {`;
-}
-
-function createUmdClose() {
-  return `return ${globalName};
-});`;
-}
-
-/**
- * @param {Record<string, string>} globals
- */
-function createExternalGlobalsPlugin(globals) {
-  const names = Object.keys(globals).map(escapeRegExp).join('|');
-  const filter = new RegExp(`^(?:${names})$`);
-
-  return {
-    name: 'external-globals',
-    setup(build) {
-      build.onResolve({ filter }, (args) => ({
-        path: args.path,
-        namespace: 'external-global',
-      }));
-
-      build.onLoad({ filter: /.*/, namespace: 'external-global' }, (args) => {
-        const globalIdentifier = globals[args.path];
-        return {
-          contents: `module.exports = ${globalIdentifier};`,
-          loader: 'js',
-        };
+      await bundle.write({
+        banner: licenseBanner,
+        file: output.file,
+        format: output.format,
+        name: output.name,
+        exports: output.exports,
+        globals: options.globals,
+        sourcemap: true,
+        plugins,
       });
+    }
+  } finally {
+    await bundle.close();
+  }
+}
+
+function transpileTypeScript() {
+  return {
+    name: 'transpile-typescript',
+    transform(code, id) {
+      if (!id.endsWith('.ts')) {
+        return null;
+      }
+
+      const result = ts.transpileModule(code, {
+        fileName: id,
+        compilerOptions: {
+          target: ts.ScriptTarget.ES2020,
+          module: ts.ModuleKind.ESNext,
+          sourceMap: true,
+          inlineSources: true,
+        },
+      });
+
+      return {
+        code: result.outputText,
+        map: result.sourceMapText ? JSON.parse(result.sourceMapText) : null,
+      };
     },
   };
-}
-
-/**
- * @param {string} value
- */
-function escapeRegExp(value) {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }

@@ -51,6 +51,23 @@ import { speckPreset } from '@jscrypto/speck';
 const registry = createRegistry().use(speckPreset);
 ```
 
+Or register every SPECK cipher into an existing registry:
+
+```ts
+import { createClassicRegistry } from '@jscrypto/classic';
+import { registerSpeck } from '@jscrypto/speck';
+
+const registry = registerSpeck(createClassicRegistry());
+
+const cipher = registry.createCipher({
+  cipher: 'SPECK64/128',
+  mode: 'CBC',
+  padding: 'Pkcs7',
+  key,
+  iv,
+});
+```
+
 ## Direct Helper
 
 ```ts
@@ -109,9 +126,9 @@ Package export paths:
 - `@jscrypto/speck/umd`
 - `@jscrypto/speck/umd-standalone`
 
-Default UMD/AMD builds declare a `jscryptoCore` dependency. Map that module id to `@jscrypto/core`'s UMD build in your loader config. Standalone UMD has no AMD dependency and bundles core itself. Script-tag usage of the default IIFE/UMD still expects a global `jscryptoCore`.
+Default UMD/AMD builds declare an `@jscrypto/core` dependency. Map that module id to `@jscrypto/core`'s UMD build in your loader config. Standalone UMD only declares the standard AMD `exports` dependency and bundles core itself. Script-tag usage of the default IIFE/UMD still expects a global `jscryptoCore`.
 
-In CommonJS, the UMD export paths resolve to `.cjs` builds so they can be required from packages that use `"type": "module"`.
+CommonJS users can require the regular UMD `.js` builds because this package uses explicit `.mjs` and `.cjs` entry files instead of package-level `"type": "module"`.
 
 ## License
 

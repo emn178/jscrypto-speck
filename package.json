@@ -2,7 +2,6 @@
   "name": "@jscrypto/speck",
   "version": "0.1.0",
   "description": "SPECK block cipher components for @jscrypto.",
-  "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.ts",
@@ -15,11 +14,11 @@
     "./browser": "./dist/jscrypto-speck.iife.min.js",
     "./browser-standalone": "./dist/jscrypto-speck.standalone.iife.min.js",
     "./umd": {
-      "require": "./dist/jscrypto-speck.umd.cjs",
+      "require": "./dist/jscrypto-speck.umd.js",
       "default": "./dist/jscrypto-speck.umd.min.js"
     },
     "./umd-standalone": {
-      "require": "./dist/jscrypto-speck.standalone.umd.cjs",
+      "require": "./dist/jscrypto-speck.standalone.umd.js",
       "default": "./dist/jscrypto-speck.standalone.umd.min.js"
     }
   },
@@ -41,8 +40,11 @@
   },
   "devDependencies": {
     "@jscrypto/classic": "^0.5.1",
+    "@rollup/plugin-commonjs": "^29.0.3",
+    "@rollup/plugin-node-resolve": "^16.0.3",
+    "@rollup/plugin-terser": "^1.0.0",
     "c8": "^11.0.0",
-    "esbuild": "^0.25.6",
+    "rollup": "^4.62.2",
     "typescript": "^5.8.3"
   },
   "keywords": [
