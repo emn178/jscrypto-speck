@@ -1,0 +1,69 @@
+{
+  "name": "@jscrypto/speck",
+  "version": "0.1.0",
+  "description": "SPECK block cipher components for @jscrypto.",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs"
+    },
+    "./browser": "./dist/jscrypto-speck.iife.min.js",
+    "./browser-standalone": "./dist/jscrypto-speck.standalone.iife.min.js",
+    "./umd": {
+      "require": "./dist/jscrypto-speck.umd.cjs",
+      "default": "./dist/jscrypto-speck.umd.min.js"
+    },
+    "./umd-standalone": {
+      "require": "./dist/jscrypto-speck.standalone.umd.cjs",
+      "default": "./dist/jscrypto-speck.standalone.umd.min.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "test": "npm run build && node --test tests/*.test.mjs",
+    "coverage": "npm run build && c8 --check-coverage --statements 100 --branches 100 --functions 100 --lines 100 --reporter=text --reporter=html --reporter=lcov --include=dist/index.mjs node --test tests/*.test.mjs",
+    "typecheck": "tsc -b --pretty false",
+    "prepack": "npm run build"
+  },
+  "dependencies": {
+    "@jscrypto/core": "^0.5.1",
+    "js-speck": "^0.1.0"
+  },
+  "devDependencies": {
+    "@jscrypto/classic": "^0.5.1",
+    "c8": "^11.0.0",
+    "esbuild": "^0.25.6",
+    "typescript": "^5.8.3"
+  },
+  "keywords": [
+    "speck",
+    "cipher",
+    "cryptography",
+    "block-cipher",
+    "jscrypto"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/emn178/jscrypto-speck.git"
+  },
+  "bugs": {
+    "url": "https://github.com/emn178/jscrypto-speck/issues"
+  },
+  "homepage": "https://github.com/emn178/jscrypto-speck#readme",
+  "author": "Chen, Yi-Cyuan <emn178@gmail.com>",
+  "publishConfig": {
+    "access": "public"
+  },
+  "sideEffects": false,
+  "license": "MIT"
+}
