@@ -8,7 +8,6 @@ import { cbc, ecb, noPadding, pkcs7 } from '@jscrypto/classic';
 import {
   allSpeckComponents,
   createSpeckCipher,
-  registerSpeck,
   speck64_128,
   speckPreset,
 } from '../dist/index.mjs';
@@ -152,18 +151,6 @@ test('speckPreset registers every SPECK component', () => {
   }
 });
 
-test('registerSpeck registers every SPECK component into an existing registry', () => {
-  const registry = createRegistry().use(cbc).use(pkcs7);
-  const returned = registerSpeck(registry);
-
-  assert.equal(returned, registry);
-  assert.equal(registry.has('mode', 'CBC'), true);
-  assert.equal(registry.has('padding', 'Pkcs7'), true);
-  for (const component of allSpeckComponents) {
-    assert.equal(registry.has('cipher', component.name), true);
-  }
-});
-
 test('rejects missing, invalid, wrong key, and wrong block inputs', () => {
   const key = hex('0001020308090a0b1011121318191a1b');
 
@@ -205,37 +192,21 @@ test('component create validates key length', () => {
 test('CommonJS build can be required', () => {
   const speck = require('../dist/index.cjs');
   assert.equal(typeof speck.createSpeckCipher, 'function');
-  assert.equal(typeof speck.registerSpeck, 'function');
-  assert.equal(typeof speck.createRegistry, 'function');
+  assert.equal(speck.createRegistry, undefined);
   assert.equal(speck.speck64_128.name, 'SPECK64/128');
   assert.equal(speck.speckPreset.name, 'speck');
 });
 
 test('UMD CommonJS builds can be required', () => {
-  for (const file of [
-    '../dist/jscrypto-speck.umd.js',
-    '../dist/jscrypto-speck.standalone.umd.js',
-  ]) {
-    const speck = require(file);
-    assert.equal(typeof speck.createSpeckCipher, 'function');
-    assert.equal(typeof speck.createRegistry, 'function');
-    assert.equal(speck.speck64_128.name, 'SPECK64/128');
-    assert.equal(
-      speck.createRegistry().use(speck.speck64_128).has('cipher', 'SPECK64/128'),
-      true,
-    );
-  }
+  const speck = require('../dist/jscrypto-speck.umd.js');
+  assert.equal(typeof speck.createSpeckCipher, 'function');
+  assert.equal(speck.createRegistry, undefined);
+  assert.equal(speck.speck64_128.name, 'SPECK64/128');
 });
 
-test('default browser IIFE uses shared jscryptoCore for createRegistry', async () => {
+test('browser IIFE exposes SPECK components without requiring jscryptoCore', async () => {
   const context = {};
   vm.createContext(context);
-
-  const coreCode = await readFile(
-    new URL('../node_modules/@jscrypto/core/dist/jscrypto-core.iife.js', import.meta.url),
-    'utf8',
-  );
-  vm.runInContext(coreCode, context);
 
   for (const file of [
     '../dist/jscrypto-speck.iife.js',
@@ -244,36 +215,13 @@ test('default browser IIFE uses shared jscryptoCore for createRegistry', async (
     const code = await readFile(new URL(file, import.meta.url), 'utf8');
     vm.runInContext(code, context);
     assert.equal(typeof context.jscryptoSpeck.createSpeckCipher, 'function');
-    assert.equal(context.jscryptoSpeck.createRegistry, context.jscryptoCore.createRegistry);
-    assert.equal(
-      context.jscryptoSpeck.createRegistry().use(context.jscryptoSpeck.speck64_128).has('cipher', 'SPECK64/128'),
-      true,
-    );
+    assert.equal(context.jscryptoSpeck.createRegistry, undefined);
+    assert.equal(context.jscryptoSpeck.speckPreset.name, 'speck');
   }
 });
 
-test('standalone browser IIFE bundles createRegistry without jscryptoCore global', async () => {
-  for (const file of [
-    '../dist/jscrypto-speck.standalone.iife.js',
-    '../dist/jscrypto-speck.standalone.iife.min.js',
-  ]) {
-    const context = {};
-    vm.createContext(context);
-    const code = await readFile(new URL(file, import.meta.url), 'utf8');
-    vm.runInContext(code, context);
-
-    assert.equal(context.jscryptoCore, undefined);
-    assert.equal(typeof context.jscryptoSpeck.createRegistry, 'function');
-    assert.equal(
-      context.jscryptoSpeck.createRegistry().use(context.jscryptoSpeck.speck64_128).has('cipher', 'SPECK64/128'),
-      true,
-    );
-  }
-});
-
-test('default UMD AMD path declares and receives jscryptoCore', async () => {
+test('UMD AMD path has no core dependency', async () => {
   const pending = [];
-  const amdModules = new Map();
   const context = {
     define(deps, factory) {
       pending.push({ deps, factory });
@@ -282,7 +230,7 @@ test('default UMD AMD path declares and receives jscryptoCore', async () => {
   context.define.amd = true;
   vm.createContext(context);
 
-  function loadAmd(moduleId, code) {
+  function loadAmd(code) {
     pending.length = 0;
     vm.runInContext(code, context);
     assert.equal(pending.length, 1);
@@ -292,69 +240,22 @@ test('default UMD AMD path declares and receives jscryptoCore', async () => {
       if (dep === 'exports') {
         return exports;
       }
-      assert.ok(amdModules.has(dep), `missing AMD dependency: ${dep}`);
-      return amdModules.get(dep);
+      throw new Error(`unexpected AMD dependency: ${dep}`);
     });
     const returned = factory(...args);
-    const exported = returned || exports;
-    amdModules.set(moduleId, exported);
-    return { deps: [...deps], exported };
+    return { deps: [...deps], exported: returned || exports };
   }
-
-  const coreCode = await readFile(
-    new URL('../node_modules/@jscrypto/core/dist/jscrypto-core.umd.js', import.meta.url),
-    'utf8',
-  );
-  loadAmd('@jscrypto/core', coreCode);
-  // Core's legacy UMD still creates a global while registering with AMD.
-  // Clear it so speck must receive core through the AMD factory argument.
-  delete context.jscryptoCore;
 
   for (const file of [
     '../dist/jscrypto-speck.umd.js',
     '../dist/jscrypto-speck.umd.min.js',
   ]) {
     const code = await readFile(new URL(file, import.meta.url), 'utf8');
-    const { deps, exported } = loadAmd('jscryptoSpeck', code);
-    assert.deepEqual(deps, ['exports', '@jscrypto/core']);
+    const { deps, exported } = loadAmd(code);
+    assert.deepEqual(deps, ['exports']);
     assert.equal(typeof exported.createSpeckCipher, 'function');
-    assert.equal(exported.createRegistry, amdModules.get('@jscrypto/core').createRegistry);
-    assert.equal(
-      exported.createRegistry().use(exported.speck64_128).has('cipher', 'SPECK64/128'),
-      true,
-    );
-    assert.equal(context.jscryptoCore, undefined);
-  }
-});
-
-test('standalone UMD AMD path has no core dependency', async () => {
-  const pending = [];
-  const context = {
-    define(deps, factory) {
-      pending.push({ deps, factory });
-    },
-  };
-  context.define.amd = true;
-  vm.createContext(context);
-
-  for (const file of [
-    '../dist/jscrypto-speck.standalone.umd.js',
-    '../dist/jscrypto-speck.standalone.umd.min.js',
-  ]) {
-    pending.length = 0;
-    const code = await readFile(new URL(file, import.meta.url), 'utf8');
-    vm.runInContext(code, context);
-    assert.equal(pending.length, 1);
-    assert.deepEqual([...pending[0].deps], ['exports']);
-    const exported = {};
-    const returned = pending[0].factory(exported);
-    assert.equal(returned, undefined);
-    assert.equal(typeof exported.createSpeckCipher, 'function');
-    assert.equal(typeof exported.createRegistry, 'function');
-    assert.equal(
-      exported.createRegistry().use(exported.speck64_128).has('cipher', 'SPECK64/128'),
-      true,
-    );
+    assert.equal(exported.createRegistry, undefined);
+    assert.equal(exported.speckPreset.name, 'speck');
   }
 });
 
@@ -365,11 +266,5 @@ test('generated declarations export the public API', async () => {
   assert.match(dts, /export declare const speckPreset:/);
   assert.match(dts, /export declare const allSpeckComponents:/);
   assert.match(dts, /export declare function createSpeckCipher/);
-  assert.match(dts, /export \{ createRegistry \}/);
-});
-
-test('standalone browser bundle is larger than the shared-core default', async () => {
-  const defaultSize = (await readFile(new URL('../dist/jscrypto-speck.iife.min.js', import.meta.url))).byteLength;
-  const standaloneSize = (await readFile(new URL('../dist/jscrypto-speck.standalone.iife.min.js', import.meta.url))).byteLength;
-  assert.ok(standaloneSize > defaultSize);
+  assert.doesNotMatch(dts, /createRegistry/);
 });

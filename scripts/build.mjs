@@ -13,7 +13,6 @@ const displayName = 'jscrypto-speck';
 const packageJsonPath = 'package.json';
 const entryPoint = 'src/index.ts';
 const distDir = 'dist';
-const coreGlobalName = 'jscryptoCore';
 const corePackageName = '@jscrypto/core';
 
 const version = JSON.parse(readFileSync(packageJsonPath, 'utf8')).version;
@@ -50,10 +49,7 @@ await buildEntry({
 });
 
 await buildEntry({
-  external: [corePackageName],
-  globals: {
-    [corePackageName]: coreGlobalName,
-  },
+  external: [],
   outputs: [
     {
       file: `${distDir}/${displayName}.iife.js`,
@@ -73,34 +69,6 @@ await buildEntry({
     },
     {
       file: `${distDir}/${displayName}.umd.min.js`,
-      format: 'umd',
-      name: globalName,
-      minify: true,
-    },
-  ],
-});
-
-await buildEntry({
-  external: [],
-  outputs: [
-    {
-      file: `${distDir}/${displayName}.standalone.iife.js`,
-      format: 'iife',
-      name: globalName,
-    },
-    {
-      file: `${distDir}/${displayName}.standalone.iife.min.js`,
-      format: 'iife',
-      name: globalName,
-      minify: true,
-    },
-    {
-      file: `${distDir}/${displayName}.standalone.umd.js`,
-      format: 'umd',
-      name: globalName,
-    },
-    {
-      file: `${distDir}/${displayName}.standalone.umd.min.js`,
       format: 'umd',
       name: globalName,
       minify: true,

@@ -1,6 +1,7 @@
 # @jscrypto/speck
 [![CI](https://github.com/emn178/jscrypto-speck/actions/workflows/ci.yml/badge.svg)](https://github.com/emn178/jscrypto-speck/actions/workflows/ci.yml)
-[![Coverage Status](https://coveralls.io/repos/emn178/jscrypto-speck/badge.svg?branch=main)](https://coveralls.io/r/emn178/jscrypto-speck?branch=main)
+[![Coverage Status](https://coveralls.io/repos/emn178/jscrypto-speck/badge.svg?branch=main)](https://coveralls.io/r/emn178/jscrypto-speck?branch=main). 
+[![NPM](https://nodei.co/npm/@jscrypto/speck.png?stars&downloads)](https://www.npmjs.com/package/@jscrypto/speck)
 
 SPECK block cipher components for [`@jscrypto/core`](https://www.npmjs.com/package/@jscrypto/core).
 
@@ -13,7 +14,7 @@ The raw SPECK component has no mode, padding, IV, KDF, salt, or authentication b
 ## Install
 
 ```sh
-npm install @jscrypto/core @jscrypto/speck
+npm install @jscrypto/speck
 ```
 
 Optional modes and paddings:
@@ -25,41 +26,10 @@ npm install @jscrypto/classic
 ## Quick Start
 
 ```ts
-import { createRegistry } from '@jscrypto/core';
-import { ecb, noPadding } from '@jscrypto/classic';
-import { speck64_128 } from '@jscrypto/speck';
-
-const registry = createRegistry()
-  .use(speck64_128)
-  .use(ecb)
-  .use(noPadding);
-
-const cipher = registry.createCipher({
-  cipher: 'SPECK64/128',
-  mode: 'ECB',
-  padding: 'NoPadding',
-  key,
-});
-
-const ciphertext = cipher.encrypt(plaintext);
-```
-
-Register every SPECK variant at once:
-
-```ts
-import { createRegistry } from '@jscrypto/core';
+import { registry } from '@jscrypto/classic';
 import { speckPreset } from '@jscrypto/speck';
 
-const registry = createRegistry().use(speckPreset);
-```
-
-Or register every SPECK cipher into an existing registry:
-
-```ts
-import { createClassicRegistry } from '@jscrypto/classic';
-import { registerSpeck } from '@jscrypto/speck';
-
-const registry = registerSpeck(createClassicRegistry());
+registry.use(speckPreset);
 
 const cipher = registry.createCipher({
   cipher: 'SPECK64/128',
@@ -100,35 +70,23 @@ Key length alone is not enough to choose a variant. For example, 12-byte keys ar
 
 ## Browser
 
-This package re-exports `createRegistry` from `@jscrypto/core`, so registry setup works from the speck global. Modes and paddings still come from `@jscrypto/classic` when you need them.
-
-Default builds share `jscryptoCore` and expose `jscryptoSpeck`:
+Browser builds are split by package. Load `@jscrypto/core` and `@jscrypto/classic` when you need a registry with modes or paddings, then register the SPECK preset from `@jscrypto/speck`.
 
 ```html
 <script src="jscrypto-core.iife.min.js"></script>
+<script src="jscrypto-classic.iife.min.js"></script>
 <script src="jscrypto-speck.iife.min.js"></script>
 <script>
-  const registry = jscryptoSpeck.createRegistry().use(jscryptoSpeck.speck64_128);
-</script>
-```
-
-Standalone builds bundle `@jscrypto/core`, so `createRegistry` is available without a separate core script:
-
-```html
-<script src="jscrypto-speck.standalone.iife.min.js"></script>
-<script>
-  const registry = jscryptoSpeck.createRegistry().use(jscryptoSpeck.speck64_128);
+  jscryptoClassic.registry.use(jscryptoSpeck.speckPreset);
 </script>
 ```
 
 Package export paths:
 
 - `@jscrypto/speck/browser`
-- `@jscrypto/speck/browser-standalone`
 - `@jscrypto/speck/umd`
-- `@jscrypto/speck/umd-standalone`
 
-Default UMD/AMD builds declare an `@jscrypto/core` dependency. Map that module id to `@jscrypto/core`'s UMD build in your loader config. Standalone UMD only declares the standard AMD `exports` dependency and bundles core itself. Script-tag usage of the default IIFE/UMD still expects a global `jscryptoCore`.
+UMD/AMD builds expose SPECK components and do not re-export `@jscrypto/core`. Load `@jscrypto/core` or `@jscrypto/classic` separately when you need a registry.
 
 CommonJS users can require the regular UMD `.js` builds because this package uses explicit `.mjs` and `.cjs` entry files instead of package-level `"type": "module"`.
 

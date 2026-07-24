@@ -1,5 +1,4 @@
-import type { BlockCipher, CipherComponent, PresetComponent, Registry } from '@jscrypto/core';
-import { createRegistry } from '@jscrypto/core';
+import type { BlockCipher, CipherComponent, PresetComponent } from '@jscrypto/core';
 import {
   speck128_128 as speck128_128Impl,
   speck128_192 as speck128_192Impl,
@@ -12,8 +11,6 @@ import {
   speck96_96 as speck96_96Impl,
   speck96_144 as speck96_144Impl,
 } from 'js-speck';
-
-export { createRegistry };
 
 export type SpeckVariantName =
   | '32-64'
@@ -126,13 +123,6 @@ export const speckPreset: PresetComponent<'speck'> = {
     return allSpeckComponents;
   },
 };
-
-export function registerSpeck(registry: Registry): Registry {
-  for (const component of allSpeckComponents) {
-    registry.use(component);
-  }
-  return registry;
-}
 
 function assertBlock(block: Uint8Array, blockSize: number): void {
   if (block.length !== blockSize) {
