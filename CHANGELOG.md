@@ -1,5 +1,10 @@
 # Change Log
 
+## v0.3.0 / 2026-07-29
+### Changed
+- upgrade jscrypto/core dependencies version.
+- README npm and cdn badge.
+
 ## v0.2.0 / 2026-07-24
 ### Changed
 - simplify browser package exports to `./browser` and `./umd` only.

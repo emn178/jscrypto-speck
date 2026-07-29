@@ -1,7 +1,8 @@
 # @jscrypto/speck
 [![CI](https://github.com/emn178/jscrypto-speck/actions/workflows/ci.yml/badge.svg)](https://github.com/emn178/jscrypto-speck/actions/workflows/ci.yml)
 [![Coverage Status](https://coveralls.io/repos/emn178/jscrypto-speck/badge.svg?branch=main)](https://coveralls.io/r/emn178/jscrypto-speck?branch=main)
-[![NPM](https://nodei.co/npm/@jscrypto/speck.png?style=flat&data=n,v,d&color=brightgreen)](https://www.npmjs.com/package/@jscrypto/speck)
+[![NPM](https://img.shields.io/npm/v/@jscrypto/speck)](https://www.npmjs.com/package/@jscrypto/speck)
+[![CDNJS](https://img.shields.io/jsdelivr/npm/hm/@jscrypto/speck)](https://www.jsdelivr.com/package/npm/@jscrypto/speck)
 
 SPECK block cipher components for [`@jscrypto/core`](https://www.npmjs.com/package/@jscrypto/core).
 

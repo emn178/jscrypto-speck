@@ -1,6 +1,6 @@
 {
   "name": "@jscrypto/speck",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "SPECK block cipher components for @jscrypto.",
   "main": "./dist/index.cjs",
   "module": "./dist/index.mjs",
@@ -30,8 +30,10 @@
     "prepack": "npm run build"
   },
   "dependencies": {
-    "@jscrypto/core": "^0.5.1",
     "js-speck": "^0.1.0"
+  },
+  "peerDependencies": {
+    "@jscrypto/core": ">=0.7.0 <1"
   },
   "devDependencies": {
     "@jscrypto/classic": "^0.5.1",
