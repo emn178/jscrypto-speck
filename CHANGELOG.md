@@ -1,6 +1,9 @@
 # Change Log
 
 ## v0.3.0 / 2026-07-29
+### Fixed
+- brace-expansion audit issue
+
 ### Changed
 - upgrade jscrypto/core dependencies version.
 - README npm and cdn badge.
