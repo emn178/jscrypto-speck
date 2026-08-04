@@ -1,6 +1,6 @@
 {
   "name": "@jscrypto/speck",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "SPECK block cipher components for @jscrypto.",
   "main": "./dist/index.cjs",
   "module": "./dist/index.mjs",
@@ -33,10 +33,11 @@
     "js-speck": "^0.1.0"
   },
   "peerDependencies": {
-    "@jscrypto/core": ">=0.7.0 <1"
+    "@jscrypto/core": ">=0.8.0 <1"
   },
   "devDependencies": {
-    "@jscrypto/classic": "^0.5.1",
+    "@jscrypto/classic": "^0.8.0",
+    "@jscrypto/core": "^0.8.0",
     "@rollup/plugin-commonjs": "^29.0.3",
     "@rollup/plugin-node-resolve": "^16.0.3",
     "@rollup/plugin-terser": "^1.0.0",

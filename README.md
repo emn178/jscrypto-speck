@@ -47,10 +47,13 @@ const cipher = registry.createCipher({
 import { createSpeckCipher } from '@jscrypto/speck';
 
 const cipher = createSpeckCipher('64-128', key);
-const block = cipher.encryptBlock(plaintextBlock);
+const output = new Uint8Array(plaintextBlock.length);
+cipher.encrypt(plaintextBlock, output);
 ```
 
 There is no default variant. Always pass an explicit helper name such as `64-128`.
+
+Requires `@jscrypto/core` v0.8.0 or later.
 
 ## Variants
 

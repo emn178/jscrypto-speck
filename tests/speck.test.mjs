@@ -100,13 +100,30 @@ test('createSpeckCipher matches known vectors for every variant', () => {
     const key = hex(vector.key);
     const plaintext = hex(vector.plaintext);
     const cipher = createSpeckCipher(vector.variant, key);
-    const encrypted = cipher.encryptBlock(plaintext);
-    const decrypted = cipher.decryptBlock(encrypted);
+    const encrypted = new Uint8Array(plaintext.length);
+    const decrypted = new Uint8Array(plaintext.length);
+    cipher.encrypt(plaintext, encrypted);
+    cipher.decrypt(encrypted, decrypted);
 
     assert.equal(cipher.blockSize, plaintext.length);
     assert.equal(toHex(encrypted), vector.ciphertext);
     assert.deepEqual(decrypted, plaintext);
   }
+});
+
+test('createSpeckCipher encryptBlock/decryptBlock write into caller-owned buffers', () => {
+  const vector = vectors.find((item) => item.variant === '64-128');
+  const key = hex(vector.key);
+  const plaintext = hex(vector.plaintext);
+  const cipher = createSpeckCipher(vector.variant, key);
+  const encrypted = new Uint8Array(plaintext.length);
+  const decrypted = new Uint8Array(plaintext.length);
+
+  cipher.encryptBlock(plaintext, 0, encrypted, 0);
+  cipher.decryptBlock(encrypted, 0, decrypted, 0);
+
+  assert.equal(toHex(encrypted), vector.ciphertext);
+  assert.deepEqual(decrypted, plaintext);
 });
 
 test('registry ECB + NoPadding reproduces raw SPECK64/128 block output', () => {
@@ -172,12 +189,22 @@ test('rejects missing, invalid, wrong key, and wrong block inputs', () => {
   );
 
   const cipher = createSpeckCipher('64-128', key);
+  const shortBlock = hex('2d437574746572');
+  const longBlock = hex('8b024e4548a56f8c00');
   assert.throws(
-    () => cipher.encryptBlock(hex('2d437574746572')),
-    /SPECK block must be 64 bits\./,
+    () => cipher.encrypt(shortBlock, new Uint8Array(shortBlock.length)),
+    /SPECK input length must be a multiple of 64 bits\./,
   );
   assert.throws(
-    () => cipher.decryptBlock(hex('8b024e4548a56f8c00')),
+    () => cipher.decrypt(longBlock, new Uint8Array(longBlock.length)),
+    /SPECK input length must be a multiple of 64 bits\./,
+  );
+  assert.throws(
+    () => cipher.encrypt(hex('2d4375747465723b'), new Uint8Array(7)),
+    /SPECK output length must equal input length\./,
+  );
+  assert.throws(
+    () => cipher.encryptBlock(shortBlock, 0, new Uint8Array(8), 0),
     /SPECK block must be 64 bits\./,
   );
 });

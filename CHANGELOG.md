@@ -1,5 +1,10 @@
 # Change Log
 
+## v0.4.0 / 2026-08-04
+### Changed
+- adapt SPECK `BlockCipher` to `@jscrypto/core` v0.8.0 raw buffer API (`encrypt` / `decrypt` with caller-owned output, plus offset-based `encryptBlock` / `decryptBlock`).
+- require `@jscrypto/core` `>=0.8.0 <1`.
+
 ## v0.3.0 / 2026-07-29
 ### Fixed
 - brace-expansion audit issue

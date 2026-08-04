@@ -63,14 +63,20 @@ export function createSpeckCipher(variant: SpeckVariantName, key: Uint8Array): B
   return {
     blockSize,
 
-    encryptBlock(block) {
-      assertBlock(block, blockSize);
-      return new Uint8Array(impl.encrypt(key, block));
+    encryptBlock(input, inputOffset, output, outputOffset) {
+      transformBlock(impl, key, input, inputOffset, output, outputOffset, true);
     },
 
-    decryptBlock(block) {
-      assertBlock(block, blockSize);
-      return new Uint8Array(impl.decrypt(key, block));
+    decryptBlock(input, inputOffset, output, outputOffset) {
+      transformBlock(impl, key, input, inputOffset, output, outputOffset, false);
+    },
+
+    encrypt(input, output) {
+      return transformBlocks(impl, key, input, output, true);
+    },
+
+    decrypt(input, output) {
+      return transformBlocks(impl, key, input, output, false);
     },
   };
 }
@@ -124,8 +130,42 @@ export const speckPreset: PresetComponent<'speck'> = {
   },
 };
 
-function assertBlock(block: Uint8Array, blockSize: number): void {
-  if (block.length !== blockSize) {
-    throw new Error(`SPECK block must be ${blockSize * 8} bits.`);
+function transformBlocks(
+  impl: SpeckImpl,
+  key: Uint8Array,
+  input: Uint8Array,
+  output: Uint8Array,
+  encrypting: boolean,
+): Uint8Array {
+  assertBlocks(input, output, impl.blockBytes);
+  for (let offset = 0; offset < input.length; offset += impl.blockBytes) {
+    transformBlock(impl, key, input, offset, output, offset, encrypting);
+  }
+  return output;
+}
+
+function transformBlock(
+  impl: SpeckImpl,
+  key: Uint8Array,
+  input: Uint8Array,
+  inputOffset: number,
+  output: Uint8Array,
+  outputOffset: number,
+  encrypting: boolean,
+): void {
+  const block = input.subarray(inputOffset, inputOffset + impl.blockBytes);
+  if (block.length !== impl.blockBytes) {
+    throw new Error(`SPECK block must be ${impl.blockBytes * 8} bits.`);
+  }
+  const transformed = encrypting ? impl.encrypt(key, block) : impl.decrypt(key, block);
+  output.set(transformed, outputOffset);
+}
+
+function assertBlocks(input: Uint8Array, output: Uint8Array, blockSize: number): void {
+  if (input.length % blockSize !== 0) {
+    throw new Error(`SPECK input length must be a multiple of ${blockSize * 8} bits.`);
+  }
+  if (output.length !== input.length) {
+    throw new Error('SPECK output length must equal input length.');
   }
 }
