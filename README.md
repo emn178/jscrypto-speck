@@ -12,6 +12,10 @@ SPECK is a niche/legacy/lightweight block cipher family. Do not treat it as a de
 
 The raw SPECK component has no mode, padding, IV, KDF, salt, or authentication by itself. If a protocol specifically requires modes or paddings, compose them from [`@jscrypto/classic`](https://www.npmjs.com/package/@jscrypto/classic). Modes can be composed only when their structural requirements are met; for example, GCM requires a 128-bit block cipher, so only SPECK128 variants are structurally compatible.
 
+## Demo
+[Speck Encrypt Online](https://emn178.github.io/online-tools/speck/encrypt/)  
+[Speck Decrypt Online](https://emn178.github.io/online-tools/speck/decrypt/)
+
 ## Install
 
 ```sh
